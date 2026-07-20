@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beweiskraft — Was wortlaut beweist und was nicht</title>
+<meta name="description" content="wortlaut legt sein Threat-Model offen: Der Hash beweist Integrität ab Archivierung, nicht die Authentizität der Quelle davor. Was wir beweisen, was nicht, und die fünf Glieder der Beweiskette.">
+<meta property="og:title" content="Beweiskraft — Was wortlaut beweist und was nicht">
+<meta property="og:description" content="Integrität ist nicht Authentizität. Das Threat-Model der Beweiskette, offen gelegt. Belegen statt behaupten.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://wortlaut.io/beweiskraft.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230a0d12'/%3E%3Ctext x='2' y='24' font-family='monospace' font-size='22' font-weight='800' fill='%233fb950'%3E%23%3C/text%3E%3Ctext x='15' y='24' font-family='monospace' font-size='22' font-weight='800' fill='%23e8edf2'%3Ew%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="styles.css">
+<style>
+  /* Seiten-spezifisch: Vergleichstabellen + Claim-Callout. Nutzt die globalen CSS-Variablen. */
+  .pagehead { padding: 64px 0 8px; }
+  .pagehead h1 { font-family: var(--font-mono); font-weight: 800; font-size: clamp(34px, 6vw, 56px); letter-spacing: -1.5px; line-height: 1.02; margin: 10px 0 0; }
+  .pagehead h1 .h { color: var(--green); }
+  .claim { background: var(--bg-card); border: 1px solid var(--hair); border-left: 3px solid var(--green); border-radius: 8px; padding: 18px 22px; margin: 26px 0 8px; color: var(--text-dim); }
+  .claim strong { color: var(--text); }
+  .tablewrap { overflow-x: auto; margin-top: 24px; }
+  table.cmp { width: 100%; border-collapse: collapse; font-size: 15px; min-width: 560px; }
+  table.cmp th, table.cmp td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--hair); vertical-align: top; }
+  table.cmp thead th { font-family: var(--font-mono); color: var(--green); font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--muted-2); }
+  table.cmp td:first-child { color: var(--text-dim); }
+  table.cmp .yes { color: var(--green); font-weight: 600; }
+  table.cmp .no { color: var(--amber); font-weight: 600; }
+  table.cmp code { font-family: var(--font-mono); color: var(--amber); font-size: 13.5px; }
+  ol.chain { margin: 26px 0 8px; padding: 0; list-style: none; counter-reset: chain; display: grid; gap: 14px; }
+  ol.chain li { counter-increment: chain; background: var(--bg-card); border: 1px solid var(--hair); border-radius: 10px; padding: 18px 20px 18px 58px; position: relative; color: var(--muted); }
+  ol.chain li::before { content: counter(chain); position: absolute; left: 18px; top: 16px; font-family: var(--font-mono); color: var(--green); font-weight: 800; font-size: 18px; }
+  ol.chain b { color: var(--text-dim); font-weight: 600; }
+  .backrow { margin-top: 8px; }
+  .backrow .back { display: inline-block; font-family: var(--font-mono); font-size: 14px; }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap">
+    <a href="index.html" class="brand" style="color:inherit"><span class="h">#</span>wortlaut<span class="h">_</span></a>
+    <nav>
+      <a class="hideable" href="index.html">Start</a>
+      <a class="hideable" href="index.html#prinzipien">Prinzipien</a>
+      <a href="index.html#faq">FAQ</a>
+      <a href="index.html#mitmachen">Mitmachen</a>
+      <a class="cta" href="https://github.com/MKRWW/wortlaut">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="pagehead">
+    <div class="wrap">
+      <p class="eyebrow">Threat-Model, offen gelegt</p>
+      <h1>Was wortlaut beweist<span class="h">.</span><br>Und was nicht.</h1>
+      <div class="claim">
+        <strong>wortlaut ist kein Wahrheits-Orakel, sondern eine lückenlose Beweiskette.</strong>
+        Es belegt, dass ein Wortlaut zu einem bestimmten Zeitpunkt unter einer bestimmten Quelle
+        öffentlich abrufbar war, seither unverändert ist und von mehreren unabhängigen Stellen
+        bezeugt wurde. Ob die Quelle selbst echt war, entscheidet nicht die Maschine — aber
+        Erfassungs-Metadaten, TLS-Kette, Zeitstempel und mehrere unabhängige Archive machen
+        Fälschung sehr schwer und, wo sie doch passiert, <strong>sichtbar</strong>.
+      </div>
+      <p class="lead" style="margin-top:18px">Wir stellen dieses Threat-Model bewusst an den Anfang.
+      Der Einwand kam aus der Fachöffentlichkeit selbst, und er ist berechtigt. Ihn vorwegzunehmen
+      macht uns glaubwürdiger, nicht schwächer.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <p class="eyebrow">Die zentrale Unterscheidung</p>
+      <h2>Integrität ist nicht Authentizität.</h2>
+      <p class="lead">Ein kryptografischer Hash (SHA-256 über die Rohbytes) plus Fremdarchivierung
+      beweist: <strong>„Dieser Wortlaut ist seit dem Moment des Archivierens unverändert, und genau
+      dieses Zitat wurde wiedergefunden."</strong> Das ist Integrität <em>ab Archivierung</em>.</p>
+      <p class="lead" style="margin-top:14px">Er beweist <em>nicht</em>, dass die Quelle im Moment der
+      Erfassung echt war (Deepfake, gefälschtes Konto, manipuliertes Dokument), dass tatsächlich die
+      angegebene Person das Gesagte geäußert hat, oder dass niemand die Übertragung manipuliert hat
+      (Man-in-the-Middle). Das ist <strong>Authentizität der Quelle</strong> — ein eigenständiges
+      Problem, das <em>vor</em> dem Hashen liegt. Wer beides in einen Topf wirft, verspricht zu viel.
+      Wir tun das nicht.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <p class="eyebrow">Auf einen Blick</p>
+      <h2>Was wir beweisen — und was nicht.</h2>
+      <div class="tablewrap">
+        <table class="cmp">
+          <thead>
+            <tr><th>Frage</th><th>Beweist wortlaut das?</th><th>Wodurch</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Ist der Wortlaut seit der Erfassung unverändert?</td><td class="yes">Ja, kryptografisch</td><td>SHA-256 über Rohbytes, WORM-Ledger, <code>/verify</code></td></tr>
+            <tr><td>War dieser Wortlaut zum Zeitpunkt T unter Quelle Q öffentlich abrufbar?</td><td class="yes">Ja, mehrfach bezeugt</td><td>Zeitstempel + Wayback + archive.today + eigenes WORM</td></tr>
+            <tr><td>Wurde nachträglich rückdatiert oder umgeschrieben?</td><td class="yes">Nein — das wird sichtbar</td><td>Append-only-Log, unabhängige Archive, externe Verankerung</td></tr>
+            <tr><td>Gibt die Maschine je einen umformulierten Text aus?</td><td class="yes">Nein, ausgeschlossen</td><td>Ausgabe = nur wörtliche DB-Spans, kein generierter Fließtext</td></tr>
+            <tr><td>War die Quelle im Erfassungsmoment authentisch (kein Deepfake)?</td><td class="no">Nein — kein absoluter Beweis</td><td>aber erschwert &amp; sichtbar gemacht durch die Kette unten</td></tr>
+            <tr><td>Ist die Aussage inhaltlich „wahr" / „richtig"?</td><td class="no">Nein — nicht unsere Aufgabe</td><td>Die Maschine urteilt nicht; sie belegt Wortlaut &amp; Herkunft</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="lead" style="margin-top:20px">Die beiden „Nein" in den unteren Zeilen sind kein
+      Versäumnis, sondern eine bewusste Grenze. wortlaut ist eine <strong>Chain of Custody</strong>
+      (Beweiskette), kein Richter. Die Stärke liegt nicht in einem einzelnen magischen Beweis,
+      sondern in der <strong>Konvergenz unabhängiger Belege</strong> plus Transparenz über die
+      eigene Grenze. Ein Fälscher müsste nicht ein Glied brechen, sondern mehrere unabhängige
+      gleichzeitig — und selbst dann würde die Abweichung zwischen den Zeugen zum Alarm.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <p class="eyebrow">Die Beweiskette</p>
+      <h2>Fünf Glieder, kein Silver Bullet.</h2>
+      <p class="lead">Gegen das Authentizitäts-Problem <em>vor</em> dem Hashen setzen wir keine einzelne
+      Lösung, sondern eine Kette. Jedes Glied hebt die Messlatte für Fälschung.</p>
+      <ol class="chain">
+        <li><b>Erfassungs-Provenienz — das WOHER.</b> Wir hashen nicht nur den Inhalt, sondern archivieren den Kontext der Erfassung mit: Quell-URL, TLS-Zertifikatskette der Quelldomain (belegt, dass wirklich mit dem verifizierten Kanal gesprochen wurde), HTTP-Header, exakter Zeitstempel, Version des Erfassungs-Agenten.</li>
+        <li><b>Vertrauenswürdiger Zeitstempel + Append-only-Log — das WANN.</b> Ein manipulationssicheres, nur-anhängendes Ledger mit vertrauenswürdigem Zeitstempel schließt nachträgliches Rückdatieren aus. Optional extern verankert (z. B. OpenTimestamps — nur der Hash, batch-weise, keine Inhalte, DSGVO-neutral).</li>
+        <li><b>Mehrere unabhängige Zeugen — das WER-BEZEUGT-ES.</b> Jede Erfassung geht gleichzeitig an mehrere unabhängige Dritte (Wayback, archive.today) plus eigenes WORM. Weichen die Kopien voneinander ab, ist genau das ein Manipulations-Alarm — kein einzelner Archiv-Betreiber ist alleiniger Vertrauensanker.</li>
+        <li><b>Verankerung an offiziellen Kanälen + native Signaturen.</b> Wir erfassen nur aus verifizierbaren Quellen (amtliche Parlaments-/Pressekanäle, verifizierte Konten). Wo die Quelle selbst signiert (signierte PDFs, DKIM bei E-Mail), archivieren und prüfen wir diese Signatur mit — das hebt „öffentlich abrufbar" näher an „nachweislich von der Quelle".</li>
+        <li><b>Offenes Threat-Model.</b> Wir sagen ausdrücklich, was wortlaut beweist und was nicht. Diese Seite ist dieses Glied.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <p class="eyebrow">Konkrete Angriffe</p>
+      <h2>Was die Kette leistet.</h2>
+      <div class="tablewrap">
+        <table class="cmp">
+          <thead>
+            <tr><th>Angriff</th><th>Rein per Hash abgedeckt?</th><th>Was die Kette leistet</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Nachträgliche Änderung eines archivierten Zitats</td><td class="yes">Ja</td><td>Hash-Mismatch bei <code>/verify</code>, sofort erkennbar</td></tr>
+            <tr><td>Rückdatieren / heimliches Umschreiben der Historie</td><td>Teilweise</td><td>Append-only + externe Verankerung + unabhängige Archive machen es sichtbar</td></tr>
+            <tr><td>Deepfake / gefälschtes Video oder Audio als Quelle</td><td class="no">Nein</td><td>Verankerung an offiziellen Kanälen (4) + Konvergenz mehrerer Zeugen (3); Restrisiko bleibt und wird benannt</td></tr>
+            <tr><td>Gefälschte / gespoofte Quell-Website</td><td class="no">Nein</td><td>TLS-Kette + Erfassungs-Provenienz (1) bindet an das echte WOHER</td></tr>
+            <tr><td>Man-in-the-Middle beim Scrapen</td><td class="no">Nein</td><td>TLS-Prüfung (1) + mehrere unabhängige Erfassungspfade (3)</td></tr>
+            <tr><td>Fake-„Quellen" ins Korpus einschleusen (Poisoning)</td><td>—</td><td>Nur verifizierte Ingest-Adapter; nicht-amtliche Zuordnung braucht Human-Verify, bevor sie zitierfähig ist</td></tr>
+            <tr><td>„Fasse zusammen" → erfundenes Zitat</td><td class="yes">Nicht nötig</td><td>Architektur schließt es aus: Ausgabe = nur wörtliche DB-Spans, das LLM formuliert nie den zitierfähigen Text</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <p class="eyebrow">Ehrlich bleibt ehrlich</p>
+      <h2>Die Grenzen, die wir offen nennen.</h2>
+      <div class="note">
+        <p>Ein hinreichend perfekter Deepfake, der über einen <strong>offiziellen, verifizierten
+        Kanal</strong> verbreitet wird, würde von uns als authentisch archiviert — wortlaut belegt
+        dann korrekt, dass er dort stand, nicht, dass er echt ist. Diese Unterscheidung geben wir
+        immer transparent mit.</p>
+        <p style="margin-top:12px">Absolute Quell-Authentizität ist kein technisch lösbares
+        Einzelproblem. Wir liefern <strong>Nachvollziehbarkeit und Konvergenz</strong>, nicht
+        Allwissenheit. Genau deshalb bleibt der menschliche Faktor (Human-Verify für nicht-amtliche
+        Zuordnungen) Teil des Systems, nicht wegautomatisiert.</p>
+      </div>
+      <p class="lead" style="margin-top:26px">Mehr im offenen <a href="https://github.com/MKRWW/wortlaut/blob/develop/docs/security.md">technischen Threat-Model</a>
+      und in der <a href="https://github.com/MKRWW/wortlaut/blob/develop/docs/legal.md">Rechts-Dokumentation</a>.
+      Diese Frage — Integrität vs. Authentizität — ist unser erstes offenes Architektur-Thema. Wer an
+      deterministischen Event-Ledgern, Beweisketten oder Threat-Modeling arbeitet, ist genau richtig:
+      <a href="index.html#mitmachen">mitbauen</a>.</p>
+      <p class="backrow"><a class="back" href="index.html">← zurück zur Startseite</a></p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="row">
+      <span class="brand mono"><span class="h">#</span>wortlaut<span class="h">_</span></span>
+      <a href="index.html">Start</a>
+      <a href="https://github.com/MKRWW/wortlaut">GitHub</a>
+      <a href="https://github.com/MKRWW/wortlaut/blob/develop/LICENSE">AGPL-3.0</a>
+      <a href="impressum.html">Impressum</a>
+      <a href="datenschutz.html">Datenschutz</a>
+      <span class="sep dim mono">wortlaut.io</span>
+    </div>
+    <p class="klemperer">Belegen statt urteilen. „Ich will Zeugnis ablegen bis zum letzten." — Victor Klemperer</p>
+  </div>
+</footer>
+
+</body>
+</html>
