@@ -96,6 +96,17 @@ Feldnamen exakt wie im API-Schema:
 - `VerifyResult`: `ok`, `status`, `content_hash_expected`, `content_hash_actual`, `span_in_source`,
   `archive_wayback`, `archive_today`, `timestamp_status`, `timestamp_tsa`, `timestamp_gen_time`
 
+**`timestamp_status` hat genau diese sechs Werte** (aus `pipeline/verify.py`, Spec 0076) — sie sind
+bindend, es gibt keine anderen:
+
+```
+"ok" | "mismatch" | "untrusted" | "malformed" | "missing" | "unreadable"
+```
+
+**Erfinde hier nichts.** Ein Mapping auf ausgedachte Werte wie `"confirmed"` oder `"none"` trifft
+**nie** zu und schiebt damit *jeden* Span in den Fehlerzweig — auch den erfolgreich gestempelten.
+Das ist im ersten Durchlauf genau so passiert.
+
 **Optional sind** `match`, `archive_wayback`, `archive_today`, `speaker.party`, `speaker.role`,
 `locator.*`, `timestamp_tsa`, `timestamp_gen_time` — jedes braucht einen Leerfall.
 
@@ -124,8 +135,15 @@ export function errorMessage(kind)             // 'network'|'http'|'empty' -> ve
 `verifyLabels` liefert getrennt:
 
 - **Hash** aus `ok`: „✓ Hash bestätigt" / „✗ Hash weicht ab".
-- **Zeitstempel** aus `timestamp_status`: bestätigt (mit TSA + Zeit) · **nicht vorhanden** ·
-  fehlerhaft.
+- **Zeitstempel** aus `timestamp_status`, gemäß dieser **bindenden** Tabelle:
+
+| `timestamp_status` (API) | `stamp.state` (UI) | Darstellung |
+|---|---|---|
+| `"ok"` | `confirmed` | bestätigt, mit TSA und `gen_time` |
+| `"missing"` | `none` | **neutral** — kein Mangel |
+| `"mismatch"` · `"untrusted"` · `"malformed"` · `"unreadable"` | `error` | auffällig |
+
+Die API-Werte und die UI-Zustände sind **zwei verschiedene Vokabulare**. Nicht eins zu eins mappen.
 
 Der Zustand „kein Zeitstempel" ist **neutral**, nicht rot. Das Schema sagt ausdrücklich: „Fehlender
 Stempel degradiert nichts — `ok`/`status` bleiben hash-only." Eine Demo, die dafür Rot zeigt,
@@ -133,10 +151,20 @@ behauptet einen Mangel, den es nicht gibt.
 
 ### 4.3 Neutralität
 
-Die Partei erscheint als **neutraler Tag** mit dem konventionellen Partei-Farbpunkt (wie im
-Mockup) — ein **Erkennungsmerkmal**, keine Wertung. Verboten sind Valenz-Farben (grün/rot als
-gut/schlecht), jede Sortierung nach Partei und jedes Ranking. Die Reihenfolge ist exakt die der
-API-Antwort. Der Neutralitäts-Hinweis steht sichtbar über den Ergebnissen.
+Die Partei erscheint als **neutraler Tag**. Der Punkt davor ist ein reines Aufzählungszeichen und
+trägt für **jede** Fraktion **dieselbe** gedeckte Farbe (`--muted`).
+
+**Kein Farb-Mapping je Partei, auch kein gehashtes.** Ein Hash über den Parteinamen verteilt
+Farben zufällig — und wenn dabei die Marken-Grün `#3fb950` herauskommt, steht der Partei-Tag in
+exakt der Farbe, die zwei Zeilen darunter „✓ Hash bestätigt" bedeutet, während eine andere
+Fraktion Rot bekommt. Das liest sich als Urteil. Neutralität ist in diesem Projekt eine
+**Rechtsstrategie** (`docs/legal.md` §9), keine Geschmacksfrage: Sie entkräftet den Vorwurf, das
+Werkzeug richte sich gegen eine bestimmte Partei. Diese Zufalls-Palette ist im ersten Durchlauf
+entstanden und darf nicht wiederkommen.
+
+Verboten sind damit: Valenz-Farben, partei-abhängige Farben jeder Art, Sortierung nach Partei,
+Ranking. Die Reihenfolge ist exakt die der API-Antwort. Der Neutralitäts-Hinweis steht sichtbar
+über den Ergebnissen.
 
 ### 4.4 Kein stiller Schnitt
 
@@ -164,12 +192,20 @@ Satz-Schnipsel als „das Zitat" ist ein harter Stop (§12).
 - [ ] **AC4b** Given `timestamp_status` bestätigt plus `timestamp_tsa`/`timestamp_gen_time`, When
   `verifyLabels` läuft, Then trägt `stamp` einen **eigenen** Zustand samt TSA und Zeit — getrennt
   vom Hash-Ergebnis.
-- [ ] **AC4c** Given **kein** Zeitstempel, When `verifyLabels` läuft, Then ist `stamp.state`
-  **neutral** (nicht `error`, nicht `fail`) und `hash` bleibt davon unberührt.
+- [ ] **AC4c** Given `timestamp_status === "missing"`, When `verifyLabels` läuft, Then ist
+  `stamp.state === "none"` — **neutral**, nicht `error` — und `hash` bleibt davon unberührt.
+- [ ] **AC4d** Given **jeden** der sechs echten `timestamp_status`-Werte, When `verifyLabels`
+  läuft, Then entspricht `stamp.state` exakt der Tabelle in §4.2 — je Wert ein Testfall. Kein Test
+  und keine Fixture darf einen erfundenen Statuswert verwenden.
+- [ ] **AC4e** Given ein unbekannter, nicht in §4.2 gelisteter Statuswert, When `verifyLabels`
+  läuft, Then ist `stamp.state === "error"` (fail-safe für künftige API-Werte).
 - [ ] **AC5** Given die gerenderte Seite, Then ist der Neutralitäts-Hinweis im Markup vorhanden;
   die Partei erscheint als Tag; **keine** Sortier- oder Ranking-Steuerung existiert.
 - [ ] **AC5b** Given eine Trefferliste, When gerendert wird, Then ist die Reihenfolge **identisch**
   zur Reihenfolge in `results` — kein Umsortieren im Client.
+- [ ] **AC5c** Given zwei Treffer **verschiedener** Fraktionen, When `renderCard` läuft, Then ist
+  die Farbe des Partei-Punkts für beide **identisch**; im erzeugten HTML taucht **keine**
+  partei-abhängige Farbe auf (§4.3).
 - [ ] **AC6** Given ein `verbatim_text` mit `<script>alert(1)</script>`, When `renderCard` läuft,
   Then enthält der HTML-String **kein** ausführbares `<script>`, sondern die escapte Zeichenfolge
   (§0b). Gleiches für Sprechername und Tagesordnungspunkt.
@@ -194,7 +230,8 @@ Satz-Schnipsel als „das Zitat" ist ein harter Stop (§12).
 | AC2 / AC2b / AC2c | `test_markierung_exakt` · `test_markierung_nach_sonderzeichen` · `test_ohne_match` |
 | AC3 | `test_kontext_rendert_nachbarn` |
 | AC4 / AC4b / AC4c | `test_hash_ok` · `test_zeitstempel_eigener_zustand` · `test_ohne_zeitstempel_neutral` |
-| AC5b | `test_reihenfolge_unveraendert` |
+| AC4d / AC4e | `test_alle_echten_statuswerte` (parametrisiert über alle sechs) · `test_unbekannter_status_ist_error` |
+| AC5b / AC5c | `test_reihenfolge_unveraendert` · `test_partei_punkt_farbneutral` |
 | AC6 | `test_script_wird_escaped` (verbatim_text, speaker.name, tagesordnungspunkt) |
 | AC7 | `test_fehlertexte_unterscheidbar` |
 
@@ -263,8 +300,15 @@ Neutralitäts-Hinweis · PR gegen `develop` mit `Closes MKRWW/wortlaut#44`.
   `renderVerbatim`, Aufzieh-Schalter als `<button>`, Provenienz-Zeile (Permalink · Wayback ·
   archive.today · `span_hash` · Verify-`<button>`). Fehlende optionale Felder werden **weggelassen**,
   nicht als „null" gerendert.
-- `verifyLabels(v)`: `{hash: {ok, text}, stamp: {state, text}}` mit `state` aus
-  `'confirmed' | 'none' | 'error'`; `'none'` ist neutral (§4.2).
+- `verifyLabels(v)`: `{hash: {ok, text}, stamp: {state, text}}`. `state` ist der **UI**-Zustand
+  `'confirmed' | 'none' | 'error'` und wird über die Tabelle in §4.2 aus dem **API**-Wert
+  `timestamp_status` abgeleitet (`"ok"` → `confirmed`, `"missing"` → `none`, die vier übrigen →
+  `error`, unbekannt → `error`). `'none'` ist neutral.
+- `partyTag(speaker)`: Punkt in **einer** gedeckten Farbe für alle Fraktionen, per CSS-Klasse
+  (`.dot`) statt Inline-`style`. **Keine** Funktion, die eine Farbe aus dem Parteinamen ableitet.
+- **URL-Sicherheit:** `permalink`, `archive_wayback` und `archive_today` werden nur als `href`
+  gesetzt, wenn sie mit `http://` oder `https://` beginnen — sonst weglassen. Escaping allein
+  entschärft ein `javascript:`-Ziel **nicht**. Span-IDs im Pfad mit `encodeURIComponent`.
 - `errorMessage(kind)`: drei unterschiedliche deutsche Texte für `'network'`, `'http'`, `'empty'`.
 - DOM-Verdrahtung ganz unten, hinter `if (typeof document !== "undefined")`, damit der Import in
   Node nicht auf ein DOM trifft.
@@ -278,9 +322,12 @@ müssen auch ohne JavaScript sichtbar sein.
 
 ### `demo-fixtures.js`
 
-Zwei Treffer, unterschiedliche Fraktionen, erkennbar erfundene Namen. **Einer davon ohne
-Zeitstempel** und **einer ohne `archive_today`**, damit die Leerfälle im Demo-Modus tatsächlich
-sichtbar werden. Dazu ein `context`-Bündel und je ein `VerifyResult`.
+Zwei Treffer, unterschiedliche Fraktionen, erkennbar erfundene Namen. **Einer mit
+`timestamp_status: "ok"`**, **einer mit `timestamp_status: "missing"`** und **einer ohne
+`archive_today`**, damit die Leerfälle im Demo-Modus tatsächlich sichtbar werden. Dazu ein
+`context`-Bündel und je ein `VerifyResult`.
+
+Die Statuswerte sind die **echten** aus §3 — `"confirmed"`/`"none"` gibt es nicht.
 
 ### `.github/workflows/ci.yml`
 
@@ -294,8 +341,12 @@ sichtbar werden. Dazu ein `context`-Bündel und je ein `VerifyResult`.
         with:
           node-version: "20"
       - name: node --test
-        run: node --test tests/
+        run: node --test
 ```
+
+**`node --test` ohne Pfadargument.** `node --test tests/` scheitert mit
+`Cannot find module …/tests` — ein Verzeichnis ist kein gültiges Argument. Ohne Argument sucht der
+Test-Runner selbst nach `**/*.test.js`. (Im ersten Durchlauf stand hier die falsche Form.)
 
 ## 12. Do-NOT (hart)
 
@@ -303,7 +354,10 @@ sichtbar werden. Dazu ein `context`-Bündel und je ein `VerifyResult`.
 - **KEIN** gecroppter `verbatim_text` — nie ein Satz-Schnipsel als „das Zitat".
 - **KEIN** unescapetes Einsetzen von API-Daten in HTML (§0b).
 - **KEIN** `innerHTML` mit unescapten Fremddaten · **kein** `eval` · **kein** `document.write`.
-- **KEINE** Sortierung, kein Ranking, keine Wertung, keine Valenz-Farben für Parteien.
+- **KEINE** Sortierung, kein Ranking, keine Wertung.
+- **KEINE** partei-abhängige Farbe — auch keine gehashte oder zufällige (§4.3).
+- **KEIN** erfundener `timestamp_status`-Wert in Code, Tests oder Fixtures (§3).
+- **KEIN** `href` aus API-Daten ohne `http`/`https`-Prüfung.
 - **KEINE** Dependency, **kein** Framework, **kein** Build-Schritt, **kein** CDN-Script.
 - **KEINE** Änderung an `styles.css` oder den übrigen Bestandsseiten außer dem Navigationslink.
 - **KEIN** Unicode-Fett, **keine** `<div>`-Buttons (echte `<button>`-Elemente).
