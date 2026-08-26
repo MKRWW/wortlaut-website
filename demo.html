@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>demo — Wortlaut durchsuchen · wortlaut</title>
+<meta name="description" content="Demo-Unterseite von wortlaut: wörtliche Aussagen durchsuchen, Kontext aufziehen, Hash selbst nachrechnen. Im Demo-Modus mit erkennbar erfundenen Beispieldaten.">
+<meta property="og:title" content="demo — Wortlaut durchsuchen · wortlaut">
+<meta property="og:description" content="Wörtlich, mit Quelle, Fremdarchiv und Hash — durchsuchbar, aufziehbar, nachrechenbar.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://wortlaut.io/demo.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230a0d12'/%3E%3Ctext x='2' y='24' font-family='monospace' font-size='22' font-weight='800' fill='%233fb950'%3E%23%3C/text%3E%3Ctext x='15' y='24' font-family='monospace' font-size='22' font-weight='800' fill='%23e8edf2'%3Ew%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="demo.css">
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap">
+    <span class="brand"><span class="h">#</span>wortlaut<span class="h">_</span></span>
+    <nav>
+      <a href="index.html">Start</a>
+      <a href="beweiskraft.html">Beweiskraft</a>
+      <a class="cta" href="https://github.com/MKRWW/wortlaut">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section id="top" style="border-top:none">
+    <div class="wrap">
+      <h1>Demo<span class="h">_</span><span class="demo-badge" id="demo-badge">Demo-Beispieldaten</span></h1>
+      <p class="lead">Das sichtbare Beweisstück: echte wörtliche Aussagen durchsuchen, den <strong>Kontext aufziehen</strong>, den <strong>Hash selbst nachrechnen lassen</strong> — inklusive der Aussage, ob der Wortlaut unabhängig zeitgestempelt ist. Im Live-Betrieb (separater Ops-Schritt) fragt dieselbe Seite die echte API ab; ein Live-Fehler zeigt eine ehrliche Fehlermeldung und fällt nie auf Beispieldaten zurück.</p>
+
+      <form id="search-form" role="search">
+        <label for="q" class="sr-only">Suchbegriff</label>
+        <input type="search" id="q" name="q" placeholder="Suchbegriff, z. B. „Klimaschutz“" autocomplete="off">
+        <button type="submit">Suchen</button>
+      </form>
+
+      <p class="neutrality">Die Ergebnisse stehen in der Reihenfolge der API-Antwort. Die Partei ist ein Erkennungsmerkmal, keine Wertung — kein Ranking, keine Sortierung, keine Bewertung.</p>
+      <p id="result-count" aria-live="polite"></p>
+      <div id="results"></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="row">
+      <span class="brand mono"><span class="h">#</span>wortlaut<span class="h">_</span></span>
+      <a href="index.html">Start</a>
+      <a href="https://github.com/MKRWW/wortlaut">GitHub</a>
+      <a href="https://github.com/MKRWW/wortlaut/blob/develop/LICENSE">AGPL-3.0</a>
+      <a href="impressum.html">Impressum</a>
+      <a href="datenschutz.html">Datenschutz</a>
+      <span class="sep dim mono">wortlaut.io</span>
+    </div>
+    <p id="footer-demo-note" class="dim" style="font-family:var(--font-mono); font-size:13px; margin-top:18px">Demo-Beispieldaten: Alle Namen, Fraktionen, Sätze, URLs und Hashes auf dieser Seite sind erkennbar erfunden und stehen nicht für echte Zitate.</p>
+    <p class="klemperer">Belegen statt urteilen. „Ich will Zeugnis ablegen bis zum letzten.“ — Victor Klemperer</p>
+  </div>
+</footer>
+
+<script type="module" src="demo.js"></script>
+
+</body>
+</html>
